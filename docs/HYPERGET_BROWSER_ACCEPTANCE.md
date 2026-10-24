@@ -10,6 +10,7 @@
 
 ## Source-only evidence
 - **PASS (8/8 isolated in-memory source-model checks):** explicit disconnect, stale disconnect, stale message, multi-request disconnect, timeout/late reply, no secret logging, one-shot request, and stable browser identities. The actual GitHub TypeScript source was fetched, TypeScript-only syntax stripped for isolated V8 execution, and behavior exercised with a mocked native port. **This is not a TypeScript typecheck, npm test run, real browser test, or packaged extension.**
+- **PASS 15/15 static assertions on re-fetched GitHub files:** port ownership, stale-event guard, immediate pending rejection, clearing, no sensitive native payload logs, unchanged native host/Firefox ID/Chrome public key, HyperGet manifest/package/English locale, Apache-2.0 attribution and presence of source-only regression harness. Static checks are not a typecheck or runtime test.
 - **ADDED, NOT EXECUTED in npm/Node:** `scripts/tests/HyperGetNativeTransportSourceSmoke.cjs`, which transpiles the real TypeScript file in memory using the existing TypeScript devDependency and runs the same behavioral scenarios with Node's built-in test runner. Run after `npm ci`: `node --test scripts/tests/HyperGetNativeTransportSourceSmoke.cjs`.
 - **NOT TESTED:** Chrome/Edge/Firefox extension builds, actual browser-native-host exchange, Windows upgrade, captured cookies/headers, permission prompts, HTTP fallback and real download completion.
 
