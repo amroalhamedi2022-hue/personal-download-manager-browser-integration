@@ -45,7 +45,7 @@ export class NativeMessagingTransport {
             );
             this.port = port;
 
-            port.onMessage.addListener(this.handleMessage);
+            port.onMessage.addListener((message) => this.handleMessage(port, message));
             port.onDisconnect.addListener(this.handleDisconnect);
         } catch (e) {
             this.port = null;
@@ -59,7 +59,8 @@ export class NativeMessagingTransport {
         const port = this.port;
 
         this.port = null;
-
+        // Do not wait for onDisconnect: it may be delayed or never delivered.
+        this.rejectPendingRequests(new NetworkError("Native messaging disconnected"));
         port?.disconnect();
     }
 
@@ -202,13 +203,15 @@ export class NativeMessagingTransport {
     }
 
     private handleMessage = (
+        port: Runtime.Port,
         message: unknown,
     ): void => {
+        // A disconnected port may still deliver queued callbacks after reconnect.
+        if (this.port !== port) return;
 
         if (!isNativeMessagingMessage(message)) {
             console.warn(
-                "Received invalid native message",
-                message,
+                "HyperGet received an invalid native message",
             );
             return;
         }
@@ -217,7 +220,9 @@ export class NativeMessagingTransport {
         if (pendingRequest === undefined) {
             // Native initiated event or unknown message.
             // it's a good idea to add event handler here too.
-            console.log("Unhandled native message", message,);
+            // Never print arbitrary native payloads: they may include URLs,
+            // request headers, cookies or authentication tokens.
+            console.debug("HyperGet ignored an unmatched native response");
             return;
         }
 
@@ -244,29 +249,29 @@ export class NativeMessagingTransport {
         }
     };
 
+    private rejectPendingRequests(error: Error): void {
+        const pending = [...this.pendingRequests.values()];
+        this.pendingRequests.clear();
+        for (const request of pending) {
+            clearTimeout(request.timeout);
+            request.reject(error);
+        }
+    }
+
     private handleDisconnect = (
         port: Runtime.Port,
     ): void => {
-
-        if (this.port === port) {
-            this.port = null;
-        }
+        // Ignore delayed disconnect events from a previous native connection.
+        // They must not reject requests belonging to a replacement port.
+        if (this.port !== port) return;
+        this.port = null;
 
         const message =
             port.error?.message ??
             browser.runtime.lastError?.message ??
             "Native messaging was disconnected";
-
-        const error = new NetworkError(message);
-
-        for (const pending of this.pendingRequests.values()) {
-            clearTimeout(pending.timeout);
-            pending.reject(error);
-        }
-        this.pendingRequests.clear();
-        console.log(
-            "Native messaging disconnected:",
-            message,
-        );
+        this.rejectPendingRequests(new NetworkError(message));
+        // Avoid logging browser-provided error details or request payloads.
+        console.debug("HyperGet native messaging disconnected");
     };
 }
