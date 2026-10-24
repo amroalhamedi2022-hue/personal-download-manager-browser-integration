@@ -186,6 +186,6 @@ test("user-visible browser branding changes do not rename protocol identities", 
     const firefox = fs.readFileSync(path.join(root, "src/manifest/manifest.firefox.ts"), "utf8");
     assert.equal(pkg.displayName, "HyperGet Browser Integration");
     assert.equal(messages.abdm_notification_title.message, "HyperGet");
-    assert.match(constants, /packageName: "app\\.personaldownloadmanager"/);
-    assert.match(firefox, /browser-integration@personaldownloadmanager\\.local/);
+    assert.ok(constants.includes('packageName: "app.personaldownloadmanager"'));
+    assert.ok(firefox.includes("browser-integration@personaldownloadmanager.local"));
 });
