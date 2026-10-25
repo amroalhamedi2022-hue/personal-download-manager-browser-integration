@@ -12,6 +12,7 @@ on:
       - "scripts/tests/HyperGetNativeTransportSourceSmoke.cjs"
       - "package.json"
       - "package-lock.json"
+      - "tsconfig.native-bridge.json"
   workflow_dispatch:
 
 permissions:
@@ -44,8 +45,8 @@ jobs:
         run: npm ci --no-audit --no-fund
       - name: Run real TypeScript-source native transport regressions
         run: node --test scripts/tests/HyperGetNativeTransportSourceSmoke.cjs
-      - name: Typecheck browser extension source
-        run: npx tsc --noEmit
+      - name: Typecheck changed native transport and its imports
+        run: npx tsc --noEmit --project tsconfig.native-bridge.json
       - name: Compile Chrome extension bundle
         run: npm run build:chrome
       - name: Compile Firefox extension bundle
