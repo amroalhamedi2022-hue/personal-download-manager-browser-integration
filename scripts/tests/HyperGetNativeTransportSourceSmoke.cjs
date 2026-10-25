@@ -81,7 +81,7 @@ function setup(timeout = 200) {
     };
     vm.runInNewContext(js.outputText, sandbox, {filename: "NativeMessagingTransport.js"});
     const Transport = sandbox.module.exports.NativeMessagingTransport;
-    return {transport: new Transport("app.personaldownloadmanager", timeout), ports, logs};
+    return {transport: new Transport("app.personaldownloadmanager", timeout), ports, logs, browser};
 }
 
 function reply(port, request) {
@@ -171,6 +171,31 @@ test("malformed native messages never print secrets to browser logs", async () =
     });
     assert.equal(logs.join(" ").includes("SECRET_TOKEN_SENTINEL"), false);
     transport.disconnect();
+});
+
+test("one-shot native request times out when the host never replies", async () => {
+    const {transport, browser, ports} = setup(20);
+    browser.runtime.sendNativeMessage = () => new Promise(() => {});
+    await assert.rejects(transport.requestTyped("ping", null), /timed out: ping/);
+    assert.equal(ports.length, 0);
+});
+
+test("one-shot native request retains error wrapping when the host rejects", async () => {
+    const {transport, browser} = setup(100);
+    browser.runtime.sendNativeMessage = async () => {
+        throw new Error("native host unavailable");
+    };
+    await assert.rejects(transport.requestTyped("ping", null), /Failed to send native message/);
+});
+
+test("one-shot late host reply cannot turn a timed-out request into success", async () => {
+    const {transport, browser} = setup(20);
+    let replyLater;
+    browser.runtime.sendNativeMessage = () => new Promise(resolve => { replyLater = resolve; });
+    const pending = transport.requestTyped("ping", null);
+    await assert.rejects(pending, /timed out/);
+    replyLater({id: "B_1", content: {action: "ping", isError: false, payload: "true"}});
+    await new Promise(resolve => setImmediate(resolve));
 });
 
 test("one-shot request path remains compatible with existing native host identity", async () => {
