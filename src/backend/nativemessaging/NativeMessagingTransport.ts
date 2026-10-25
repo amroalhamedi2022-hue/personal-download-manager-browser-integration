@@ -176,11 +176,22 @@ export class NativeMessagingTransport {
     private async sendOneShot(
         message: NativeMessagingMessage,
     ): Promise<NativeMessagingMessageContent> {
+        let timeout: ReturnType<typeof setTimeout> | undefined;
         try {
-            const response = await browser.runtime.sendNativeMessage(
-                this.packageName,
-                message,
-            );
+            // Connectionless native messaging starts a separate host process.
+            // Bound the caller's wait just like the connected-port path; the
+            // browser owns host-process cleanup (this timer cannot kill it).
+            const response = await Promise.race([
+                browser.runtime.sendNativeMessage(this.packageName, message),
+                new Promise<never>((_, reject) => {
+                    timeout = setTimeout(
+                        () => reject(new NetworkError(
+                            `Native request timed out: ${message.content.action}`
+                        )),
+                        this.requestTimeout,
+                    );
+                }),
+            ]);
             if (!isNativeMessagingMessage(response)) {
                 throw new NetworkError(
                     "Invalid response from native messaging host"
@@ -199,6 +210,8 @@ export class NativeMessagingTransport {
                     cause: e
                 }
             )
+        } finally {
+            if (timeout !== undefined) clearTimeout(timeout);
         }
     }
 
