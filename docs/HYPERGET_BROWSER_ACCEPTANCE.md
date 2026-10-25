@@ -1,3 +1,13 @@
+## 2026-10-25 — one-shot native host liveness milestone (pending exact-SHA CI)
+
+**Required behavior:** The existing connected-port native messaging path already rejects after its configured timeout, but the connectionless `sendNativeMessage` path could await a nonresponding host indefinitely. Production now races the one-shot browser promise against the same configured request timeout, clears the timer on every outcome, and preserves existing response/error validation. This bounds the extension caller, **not** the native host process lifetime; the browser controls that. No protocol/host ID, storage key, user data, dependency or permissions change.
+
+**Regression:** Three new Node tests cover a host that never responds, an immediate native-host rejection, and a late reply after timeout. Expected total **11/11** tests, plus strict TypeScript typecheck and both Chrome/Firefox Vite builds. Existing package-lock dependencies and Apache-2.0 project code are reused; official MDN `runtime.sendNativeMessage` API documentation confirms the Promise-based connectionless behavior. No external code was copied.
+
+**Purposeful build question, recorded before CI:** Does the updated TypeScript compile, do all 11 source-executed native-port tests pass, and do both real browser-extension bundles generate valid HyperGet manifests without changing nativeMessaging permission? Source-only text assertions cannot prove TypeScript types or Vite packaging. One PR-scoped free GitHub Actions workflow runs `npm ci`, Node tests, `tsc --noEmit`, both Vite builds, and manifest checks. **NOT TESTED until the exact-head run finishes.** Browser ↔ installed Windows host E2E, actual downloads, user-profile upgrade and final app packaging remain NOT TESTED.
+
+---
+
 # HyperGet browser integration — source-only acceptance (2026-10-24)
 
 **Branch:** `automation/hyperget-browser-lifecycle-branding` (separate browser repository; not merged).
