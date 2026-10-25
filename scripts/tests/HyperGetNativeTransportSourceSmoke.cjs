@@ -63,7 +63,7 @@ function setup(timeout = 200) {
             debug: (...args) => logs.push(args.join(" ")),
         },
         require(name) {
-            if (name === "webextension-polyfill") return browser;
+            if (name === "webextension-polyfill") return {default: browser};
             if (name === "~/backend/BackendError") return {NetworkError, AppApiError};
             if (name === "./NativeMessagingProtocol") return {
                 generateMessageId: () => "B_" + (++id),
