@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "skipLibCheck": true
+  },
+  "files": ["src/backend/nativemessaging/NativeMessagingTransport.ts"],
+  "include": [],
+  "exclude": []
+}
