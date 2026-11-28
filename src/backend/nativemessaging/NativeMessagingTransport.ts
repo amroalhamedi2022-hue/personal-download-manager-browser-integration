@@ -45,7 +45,11 @@ export class NativeMessagingTransport {
             );
             this.port = port;
 
-            port.onMessage.addListener(this.handleMessage);
+            port.onMessage.addListener(message => {
+                if (this.port === port) {
+                    this.handleMessage(message);
+                }
+            });
             port.onDisconnect.addListener(this.handleDisconnect);
         } catch (e) {
             this.port = null;
@@ -59,7 +63,7 @@ export class NativeMessagingTransport {
         const port = this.port;
 
         this.port = null;
-
+        this.rejectPendingRequests(new NetworkError("Native messaging was disconnected"));
         port?.disconnect();
     }
 
@@ -176,11 +180,20 @@ export class NativeMessagingTransport {
         message: NativeMessagingMessage,
     ): Promise<NativeMessagingMessageContent> {
         try {
-            const response = await browser.runtime.sendNativeMessage(
-                this.packageName,
-                message,
-            );
-            if (!isNativeMessagingMessage(response)) {
+            // One-shot connections must obey the same time budget as a port.
+            // A timeout does not prove the host did not process the request.
+            let timeout: ReturnType<typeof setTimeout> | undefined;
+            const response = await Promise.race([
+                browser.runtime.sendNativeMessage(this.packageName, message),
+                new Promise<never>((_, reject) => {
+                    timeout = setTimeout(() => reject(new NetworkError(
+                        `Native request timed out: ${message.content.action}`,
+                    )), this.requestTimeout);
+                }),
+            ]).finally(() => {
+                if (timeout !== undefined) clearTimeout(timeout);
+            });
+            if (!isNativeMessagingMessage(response) || response.id !== message.id || response.content.action !== null) {
                 throw new NetworkError(
                     "Invalid response from native messaging host"
                 );
@@ -206,23 +219,23 @@ export class NativeMessagingTransport {
     ): void => {
 
         if (!isNativeMessagingMessage(message)) {
-            console.warn(
-                "Received invalid native message",
-                message,
-            );
+            // A malformed payload may contain credentials. Never log it.
+            console.warn("Received invalid native message");
             return;
         }
 
         const pendingRequest = this.pendingRequests.get(message.id);
         if (pendingRequest === undefined) {
-            // Native initiated event or unknown message.
-            // it's a good idea to add event handler here too.
-            console.log("Unhandled native message", message,);
+            // Ignore late or unsolicited messages without logging payloads.
             return;
         }
 
         clearTimeout(pendingRequest.timeout);
         this.pendingRequests.delete(message.id);
+        if (message.content.action !== null) {
+            pendingRequest.reject(new NetworkError("Invalid native messaging response action"));
+            return;
+        }
 
         try {
             pendingRequest.resolve(processResponseOrThrow(message))
@@ -248,25 +261,18 @@ export class NativeMessagingTransport {
         port: Runtime.Port,
     ): void => {
 
-        if (this.port === port) {
-            this.port = null;
-        }
+        // A late disconnect event from a retired port cannot cancel the
+        // pending requests of a replacement connection.
+        if (this.port !== port) return;
+        this.port = null;
+        this.rejectPendingRequests(new NetworkError("Native messaging was disconnected"));
+    };
 
-        const message =
-            port.error?.message ??
-            browser.runtime.lastError?.message ??
-            "Native messaging was disconnected";
-
-        const error = new NetworkError(message);
-
+    private rejectPendingRequests(error: NetworkError): void {
         for (const pending of this.pendingRequests.values()) {
             clearTimeout(pending.timeout);
             pending.reject(error);
         }
         this.pendingRequests.clear();
-        console.log(
-            "Native messaging disconnected:",
-            message,
-        );
-    };
+    }
 }
