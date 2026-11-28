@@ -1,42 +1,16 @@
-# AB Download Manager Browser Integration Repository
+# HyperGet Browser Integration
 
-> If you are looking for the main app repository, use [this link](https://github.com/amir1376/ab-download-manager).
-## Usage
+Browser companion for **HyperGet** on Windows. Captures selected links and supported browser downloads, then forwards user-approved requests to the installed HyperGet application.
 
-In order to use this extension you need to [install](https://abdownloadmanager.com/#download) AB Download Manager.
+## Compatibility and privacy
 
-### This extension does the following
+- The native-messaging host identifier remains `app.personaldownloadmanager` and the Firefox extension ID remains `browser-integration@personaldownloadmanager.local` for upgrade compatibility. Do not rename either without a tested migration.
+- This extension can optionally forward request headers/cookies when the corresponding user setting is enabled. Avoid sharing secrets in logs. Native messaging responses are correlated by request ID.
+- The source-only native-port regression checks are in `scripts/tests/HyperGetNativeTransportSourceSmoke.cjs`. After installing the existing npm dependencies, run `node --test scripts/tests/HyperGetNativeTransportSourceSmoke.cjs`. This is **not** a browser build or an end-to-end Windows test.
+- Actual Chrome/Edge/Firefox integration, permission behavior, upgrades and signed-link downloads remain **NOT TESTED** on this branch.
 
-- Adds a `Download With AB DM` in browser's context menu
-- Automatically captures download links when the user wants to download the file from their browser
-- Show a `Download Selected` popup when the user selects some section of the page that contains links
+## Upstream credit
 
-## How To Build
-In order to build this extension locally:
-> I am developing this on `Windows` using `npm`, but it should have the same result on other build environments.
-```bash
-# install dependencies
-npm i
+This fork derives from [AB Download Manager Browser Integration](https://github.com/amir1376/ab-download-manager-browser-integration) under **Apache-2.0**. See `LICENSE` and `FORK-NOTICE.md`. HyperGet is a separate product and is not endorsed by the upstream authors.
 
-# for firefox
-npm run pack:firefox
-# for chrome
-npm run pack:chrome
-```
-
-The output zip file containing the extension will be placed at `./dist/<browser_name>.zip`.
-
-## Repositories And Source Code
-
-There are multiple repositories related to the **AB Download Manager** project:
-
-| Repository                                                                                                 | Description                                                                   |
-|------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------|
-| [Main Application](https://github.com/amir1376/ab-download-manager)                                        | Contains the  **Application** that runs on your  **device**                   |
-| [Browser Integration](https://github.com/amir1376/ab-download-manager-browser-integration)  (You are here) | Contains the **Browser Extension** to be installed on your  **browser**       |
-| [Website](https://github.com/amir1376/ab-download-manager-website)                                         | Contains the **AB Download Manager** [website](https://abdownloadmanager.com) |
-
-I spent a lot of time to create this project.
-
-If you like my work, Please consider giving it a ⭐.
-Thanks ❤️
+The existing GitHub repository path is retained for continuity; it is not the product name.

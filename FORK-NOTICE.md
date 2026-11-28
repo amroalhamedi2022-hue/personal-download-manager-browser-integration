@@ -1,11 +1,11 @@
-# Personal browser integration fork notice
+# HyperGet Browser Integration — fork attribution
 
-This private personal project is based on
+HyperGet Browser Integration derives from
 [AB Download Manager Browser Integration](https://github.com/amir1376/ab-download-manager-browser-integration),
-licensed under the Apache License 2.0.
+licensed under the Apache License 2.0. The upstream license and attribution
+are preserved in this repository.
 
-The upstream license and attribution are preserved. This fork uses a separate
-extension identity and native-messaging host so it does not replace or connect
-to the original AB Download Manager installation.
-
-This notice does not imply endorsement by the upstream project.
+This fork has its own product display name. Existing extension IDs, native
+host protocol names, local storage keys and GitHub repository paths are
+intentionally preserved for backward compatibility. No upstream endorsement
+is implied.

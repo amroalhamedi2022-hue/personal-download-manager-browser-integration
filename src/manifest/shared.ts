@@ -33,7 +33,7 @@ export function getBaseManifest() {
 
 export function getBrowserActionInfo(){
     return  {
-        default_title: "Download Manager",
+        default_title: "HyperGet",
         default_popup: "src/browseractionpopup/browser-action.html"
     }
 }

@@ -1,0 +1,71 @@
+name: HyperGet browser native bridge typecheck and bundle acceptance
+
+# Purposeful milestone build: source-model tests cannot prove TypeScript
+# type correctness or real Chrome/Firefox extension bundling. No release.
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/hyperget-browser-native-bridge.yml"
+      - "src/backend/nativemessaging/**"
+      - "src/manifest/**"
+      - "scripts/tests/HyperGetNativeTransportSourceSmoke.cjs"
+      - "package.json"
+      - "package-lock.json"
+      - "tsconfig.native-bridge.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hyperget-browser-native-bridge-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  native-bridge:
+    name: 11 native messaging regressions, TS strict, Chrome and Firefox bundles
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      HYPERGET_TESTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - name: Check out exact PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Verify exact tested SHA
+        run: test "$(git rev-parse HEAD)" = "$HYPERGET_TESTED_SHA"
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Run real TypeScript-source native transport regressions
+        run: node --test scripts/tests/HyperGetNativeTransportSourceSmoke.cjs
+      - name: Typecheck changed native transport and its imports
+        run: npx tsc --noEmit --project tsconfig.native-bridge.json
+      - name: Compile Chrome extension bundle
+        run: npm run build:chrome
+      - name: Compile Firefox extension bundle
+        run: npm run build:firefox
+      - name: Validate both generated manifests and native host permission
+        run: |
+          node - <<'NODE'
+          const fs = require("node:fs");
+          for (const browser of ["chrome", "firefox"]) {
+            const path = `dist/${browser}/manifest.json`;
+            if (!fs.existsSync(path)) throw new Error(`Missing ${path}`);
+            const manifest = JSON.parse(fs.readFileSync(path, "utf8"));
+            if (manifest.name !== "HyperGet Browser Integration") {
+              throw new Error(`${browser}: unexpected user-facing product name`);
+            }
+            if (!Array.isArray(manifest.permissions) ||
+                !manifest.permissions.includes("nativeMessaging")) {
+              throw new Error(`${browser}: native messaging permission missing`);
+            }
+            console.log(`${browser}: manifest PASS, version=${manifest.version}`);
+          }
+          NODE

@@ -9,16 +9,16 @@
     "message": "Please first make a selection"
   },
   "context_menu_download_with_abdm": {
-    "message": "Download with Download Manager"
+    "message": "Download with HyperGet"
   },
   "context_menu_download_selected_links_with_abdm": {
-    "message": "Download selected links with Download Manager"
+    "message": "Download selected links with HyperGet"
   },
   "browser_action_popup_title": {
-    "message": "Download Manager Quick Settings"
+    "message": "HyperGet Quick Settings"
   },
   "option_ui_title": {
-    "message": "Download Manager Extension"
+    "message": "HyperGet Extension"
   },
   "connection_connected": {
     "message": "Connected"
@@ -126,10 +126,10 @@
     "message": "Test"
   },
   "note_about_app_must_be_installed_first": {
-    "message": "Make sure Download Manager is installed before using this extension."
+    "message": "Make sure HyperGet is installed before using this extension."
   },
   "download_abdm_app": {
-    "message": "Download The App"
+    "message": "Download HyperGet"
   },
   "project_website": {
     "message": "Project Website"
@@ -141,13 +141,13 @@
     "message": "Project Source Code"
   },
   "abdm_notification_title": {
-    "message": "Download Manager"
+    "message": "HyperGet"
   },
   "abdm_notification_download_captured_silently": {
     "message": "Download captured silently"
   },
   "download_media_title": {
-    "message": "Download With Download Manager"
+    "message": "Download With HyperGet"
   },
   "config_capture_file_size_limit_kb": {
     "message": "Capture file size minimum (KB)"
